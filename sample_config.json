@@ -1,0 +1,7 @@
+{
+  Token: "my-token-here",
+  Whitelist: [
+    "serverid1",
+    "serverid2"
+  ]
+}
