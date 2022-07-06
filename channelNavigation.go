@@ -3,12 +3,13 @@ package main
 import (
 	"github.com/bwmarrin/discordgo"
 	tea "github.com/charmbracelet/bubbletea"
+  "github.com/charmbracelet/lipgloss"
   "fmt"
 )
 
 type GuildsNavigation struct {
   Cursor [2]int
-  IsOnServerTab bool
+  IsOnServerTab bool 
   Discord *discordgo.Session
 }
 
@@ -54,17 +55,44 @@ func (m GuildsNavigation) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg.String() {
     case "ctrl+c":
       return m, tea.Quit
+
+    case "up", "k", "w":
+      if m.Cursor[0] > 0 && m.IsOnServerTab {
+        m.Cursor[0] -= 1
+        m.Cursor[1] = 0
+      } else if m.Cursor[1] > 0 && !m.IsOnServerTab {
+        m.Cursor[1] -= 1
+      }
+
+    case "down", "j", "s":
+      if m.Cursor[0] < len(Guilds) - 1 && m.IsOnServerTab {
+        m.Cursor[0] += 1
+        m.Cursor[1] = 0
+      } else if m.Cursor[1] < len(Guilds[m.Cursor[0]].Channels) && !m.IsOnServerTab {
+        m.Cursor[1] += 1
+      }
+    default:
+      fmt.Println(msg.String())
+
     }
   }
   return m, nil
 }
 
 func (m GuildsNavigation) View() string {
-  guilds := ""
+  var guilds []string
 
-  for _, guild := range Guilds {
-    guilds += guild.Name + "\n"
+  for i, guild := range Guilds {
+    if i == m.Cursor[0] {
+      if m.IsOnServerTab {
+        guilds = append(guilds, selected.Render(guild.Name))
+      } else {
+        guilds = append(guilds, highlighted.Render(guild.Name))
+      }
+    } else {
+      guilds = append(guilds, guild.Name)
+    }
   }
 
-  return guilds
+  return lipgloss.JoinVertical(lipgloss.Left, guilds...);
 }

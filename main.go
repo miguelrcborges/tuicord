@@ -30,6 +30,7 @@ func main() {
 
   tui := tea.NewProgram(GuildsNavigation{
     Discord: discord,
+    IsOnServerTab: true,
   })
 
   if err := tui.Start(); err != nil {
