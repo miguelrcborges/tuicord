@@ -1,17 +1,20 @@
 package main
 
 import (
-  "github.com/bwmarrin/discordgo"
-  "fmt"
-  "os"
-  "os/signal"
-  "syscall"
+	"fmt"
+	"os"
+
+	"github.com/bwmarrin/discordgo"
+	tea "github.com/charmbracelet/bubbletea"
 )
+
+var hasReceivedMessage = false
 
 func main() {
   err := readConfig()
   if err != nil {
     fmt.Println("Error: ", err)
+    return
   }
 
   discord, err := discordgo.New("Bot " + config.Token)
@@ -23,29 +26,25 @@ func main() {
 
   discord.AddHandler(messageCreate)
 
-  fmt.Println(config)
-
   discord.Identify.Intents = discordgo.IntentsAll
 
-  err = discord.Open()
-  if err != nil {
+  tui := tea.NewProgram(GuildsNavigation{
+    Discord: discord,
+  })
+
+  if err := tui.Start(); err != nil {
     fmt.Println("Error: ", err)
-    return
+    os.Exit(1)
   }
 
-  sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-	<-sc
-
-	discord.Close()
+  discord.Close()
 }
 
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-  for _, v := range config.Whitelist {
+  for _, v := range config.AllowedList {
     if m.GuildID == v {
-      guild, _ := s.State.Guild(m.GuildID)
-      fmt.Println(guild.Name, m.Author, m.Content)
+      hasReceivedMessage = true
       return 
     }
   }

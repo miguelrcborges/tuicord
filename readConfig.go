@@ -7,7 +7,7 @@ import (
 
 type Config struct {
   Token string 
-  Whitelist []string
+  AllowedList []string
 }
 
 var config Config
