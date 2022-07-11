@@ -36,6 +36,7 @@ func (m GuildsNavigation) Init() tea.Cmd {
     var channels []Channel
 
     for _, channel := range guild.Channels {
+      if channel.Type != 0 { continue }
       channels = append(channels, Channel{
         Id: channel.ID,
         Name: channel.Name,
@@ -71,8 +72,13 @@ func (m GuildsNavigation) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
       } else if m.Cursor[1] < len(Guilds[m.Cursor[0]].Channels) && !m.IsOnServerTab {
         m.Cursor[1] += 1
       }
-    default:
-      fmt.Println(msg.String())
+
+    case "right", "l", "d":
+      m.IsOnServerTab = false
+
+    case "left", "h", "a":
+      m.IsOnServerTab = true
+      m.Cursor[1] = 0
 
     }
   }
@@ -81,6 +87,7 @@ func (m GuildsNavigation) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m GuildsNavigation) View() string {
   var guilds []string
+  var channels []string
 
   for i, guild := range Guilds {
     if i == m.Cursor[0] {
@@ -94,5 +101,21 @@ func (m GuildsNavigation) View() string {
     }
   }
 
-  return lipgloss.JoinVertical(lipgloss.Left, guilds...);
+  for i, channel := range Guilds[m.Cursor[0]].Channels {
+    if i == m.Cursor[1] {
+      if !m.IsOnServerTab {
+        channels = append(channels, selected.Render(channel.Name))
+      } else {
+        channels = append(channels, highlighted.Render(channel.Name))
+      }
+    } else {
+      channels = append(channels, channel.Name)
+    }
+  }
+
+  return lipgloss.JoinHorizontal(
+    lipgloss.Top,
+    lipgloss.JoinVertical(lipgloss.Left, guilds...),
+    lipgloss.JoinVertical(lipgloss.Left, channels...),
+  );
 }
